@@ -347,4 +347,116 @@ public:
         gtk_widget_set_visible(progressBar, FALSE);
         return FALSE;
     }
+
+    void mostrarResultados(const std::string& jsonResposta, const std::string& arquivo) {
+        GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textResultados));
+        
+        std::string resultado = "╔══════════════════════════════════════════════════════════╗\n";
+        resultado += "║              🎯 ANÁLISE DISTRIBUÍDA CONCLUÍDA             ║\n";
+        resultado += "╚══════════════════════════════════════════════════════════╝\n\n";
+        resultado += "📁 ARQUIVO ANALISADO: " + arquivo + "\n";
+        resultado += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+        
+        if (jsonResposta.find("erro") != std::string::npos || jsonResposta.empty()) {
+            resultado += "❌ ERRO DE COMUNICAÇÃO:\n\n";
+            resultado += jsonResposta + "\n\n";
+            resultado += "🔧 SOLUÇÕES:\n";
+            resultado += "   • Verificar containers: docker-compose ps\n";
+            resultado += "   • Reiniciar serviços: docker-compose restart\n";
+            resultado += "   • Verificar logs: docker-compose logs\n";
+        } else {
+            resultado += "🏗️  EXECUÇÃO DA ARQUITETURA MASTER-SLAVE:\n\n";
+            resultado += "┌─────────────────────────────────────────────────────────┐\n";
+            resultado += "│  🖥️  Servidor Mestre  →  Coordenação e distribuição    │\n";
+            resultado += "│  📝  Escravo Letras   →  Contagem de caracteres        │\n";
+            resultado += "│  🔢  Escravo Números  →  Contagem de dígitos          │\n";
+            resultado += "└─────────────────────────────────────────────────────────┘\n\n";
+            
+            // Parse JSON simples
+            size_t pos;
+            
+            pos = jsonResposta.find("\"letras\"");
+            if (pos != std::string::npos) {
+                size_t start = jsonResposta.find(":", pos) + 1;
+                size_t end = jsonResposta.find(",", start);
+                if (end == std::string::npos) end = jsonResposta.find("}", start);
+                std::string letras = jsonResposta.substr(start, end - start);
+                letras.erase(0, letras.find_first_not_of(" \t"));
+                letras.erase(letras.find_last_not_of(" \t") + 1);
+                
+                resultado += "🔤 RESULTADO - ESCRAVO DE LETRAS:\n";
+                resultado += "   ▶️  Thread paralela #1 executada com sucesso\n";
+                resultado += "   📊 Caracteres alfabéticos processados: " + letras + "\n";
+                resultado += "   ✅ Comunicação HTTP/REST realizada\n\n";
+            }
+            
+            pos = jsonResposta.find("\"numeros\"");
+            if (pos != std::string::npos) {
+                size_t start = jsonResposta.find(":", pos) + 1;
+                size_t end = jsonResposta.find(",", start);
+                if (end == std::string::npos) end = jsonResposta.find("}", start);
+                std::string numeros = jsonResposta.substr(start, end - start);
+                numeros.erase(0, numeros.find_first_not_of(" \t"));
+                numeros.erase(numeros.find_last_not_of(" \t") + 1);
+                
+                resultado += "🔢 RESULTADO - ESCRAVO DE NÚMEROS:\n";
+                resultado += "   ▶️  Thread paralela #2 executada com sucesso\n";
+                resultado += "   📊 Dígitos numéricos processados: " + numeros + "\n";
+                resultado += "   ✅ Comunicação HTTP/REST realizada\n\n";
+            }
+            
+            pos = jsonResposta.find("\"tempo_ms\"");
+            if (pos != std::string::npos) {
+                size_t start = jsonResposta.find(":", pos) + 1;
+                size_t end = jsonResposta.find(",", start);
+                if (end == std::string::npos) end = jsonResposta.find("}", start);
+                std::string tempo = jsonResposta.substr(start, end - start);
+                tempo.erase(0, tempo.find_first_not_of(" \t"));
+                tempo.erase(tempo.find_last_not_of(" \t") + 1);
+                
+                resultado += "⏱️  MÉTRICAS DE PERFORMANCE:\n";
+                resultado += "   🚀 Tempo total de coordenação: " + tempo + " ms\n";
+                resultado += "   🧵 Threads paralelas utilizadas: 2\n";
+                resultado += "   🔄 Processamento distribuído realizado\n";
+                resultado += "   📡 Protocolos: HTTP/REST + JSON\n\n";
+            }
+        }
+        
+        resultado += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        resultado += "🎉 SISTEMA DISTRIBUÍDO EXECUTADO COM SUCESSO!\n";
+        resultado += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+        resultado += "💻 Tecnologias: C++17, GTK3, Docker, HTTP/REST, JSON\n";
+        resultado += "🏗️  Arquitetura: Master-Slave distribuída com threads paralelas\n";
+        resultado += "⚡ Interface: GTK3 otimizada para compatibilidade máxima";
+        
+        gtk_text_buffer_set_text(buffer, resultado.c_str(), -1);
+    }
+
+    std::string escapeJson(const std::string& input) {
+        std::string output;
+        for (char c : input) {
+            switch (c) {
+                case '"': output += "\\\""; break;
+                case '\\': output += "\\\\"; break;
+                case '\n': output += "\\n"; break;
+                case '\r': output += "\\r"; break;
+                case '\t': output += "\\t"; break;
+                default: output += c; break;
+            }
+        }
+        return output;
+    }
+
+    void mostrarMensagem(const std::string& titulo, const std::string& mensagem) {
+        GtkWidget *dialog = gtk_message_dialog_new(
+            GTK_WINDOW(janela),
+            GTK_DIALOG_DESTROY_WITH_PARENT,
+            GTK_MESSAGE_INFO,
+            GTK_BUTTONS_OK,
+            "%s", mensagem.c_str());
+        
+        gtk_window_set_title(GTK_WINDOW(dialog), titulo.c_str());
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+    }
 };

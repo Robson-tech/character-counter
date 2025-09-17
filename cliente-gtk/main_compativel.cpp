@@ -361,6 +361,11 @@ public:
         gtk_combo_box_set_active(GTK_COMBO_BOX(comboArquivos), 0);
     }
 
+    void atualizarStatus(const std::string& icone, const std::string& texto) {
+        gtk_label_set_text(GTK_LABEL(iconStatus), icone.c_str());
+        gtk_label_set_text(GTK_LABEL(statusLabel), texto.c_str());
+    }
+
     static void onArquivoSelecionado(GtkWidget *widget, gpointer data) {
         ClienteGTKCompativel *cliente = static_cast<ClienteGTKCompativel*>(data);
         
@@ -598,4 +603,18 @@ public:
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
     }
+
+    void executar() {
+        gtk_widget_show_all(janela);
+        gtk_main();
+    }
 };
+
+int main(int argc, char *argv[]) {
+    gtk_init(&argc, &argv);
+    
+    ClienteGTKCompativel cliente;
+    cliente.executar();
+    
+    return 0;
+}

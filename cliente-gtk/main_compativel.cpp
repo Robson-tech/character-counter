@@ -242,4 +242,109 @@ public:
         ClienteGTKCompativel *cliente = static_cast<ClienteGTKCompativel*>(data);
         cliente->processarArquivoSelecionado();
     }
+
+    void processarArquivoSelecionado() {
+        gint indice = gtk_combo_box_get_active(GTK_COMBO_BOX(comboArquivos));
+        if (indice <= 0 || indice > arquivosDisponiveis.size()) {
+            mostrarMensagem("Erro", "Selecione um arquivo válido!");
+            return;
+        }
+
+        std::string nomeArquivo = arquivosDisponiveis[indice - 1];
+        std::string caminhoCompleto = "/home/arquivos/" + nomeArquivo;
+
+        // Ler arquivo
+        std::ifstream arquivo(caminhoCompleto);
+        if (!arquivo.is_open()) {
+            mostrarMensagem("Erro", "Não foi possível abrir: " + nomeArquivo);
+            return;
+        }
+
+        std::string conteudo((std::istreambuf_iterator<char>(arquivo)),
+                            std::istreambuf_iterator<char>());
+        arquivo.close();
+
+        if (conteudo.empty()) {
+            mostrarMensagem("Aviso", "Arquivo vazio!");
+            return;
+        }
+
+        processarDistribuido(nomeArquivo, conteudo);
+    }
+
+    void processarDistribuido(const std::string& nomeArquivo, const std::string& conteudo) {
+        // Desabilitar botão
+        gtk_widget_set_sensitive(btnProcessar, FALSE);
+        gtk_widget_set_visible(progressBar, TRUE);
+        
+        // Fase 1: Preparação
+        atualizarStatus("🚀", "Iniciando processamento distribuído...");
+        gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progressBar), 0.1);
+        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progressBar), "Preparando requisição...");
+        atualizarUI();
+        g_usleep(400000); // 400ms
+
+        // Criar JSON
+        std::ofstream jsonFile("/tmp/request.json");
+        jsonFile << "{\n";
+        jsonFile << "  \"nome_arquivo\": \"" << nomeArquivo << "\",\n";
+        jsonFile << "  \"conteudo\": \"" << escapeJson(conteudo) << "\"\n";
+        jsonFile << "}";
+        jsonFile.close();
+
+        // Fase 2: Envio
+        atualizarStatus("📡", "Comunicando com servidor mestre...");
+        gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progressBar), 0.3);
+        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progressBar), "Enviando para mestre...");
+        atualizarUI();
+        g_usleep(300000); // 300ms
+
+        // Fase 3: Processamento
+        atualizarStatus("⚡", "Threads paralelas executando...");
+        gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progressBar), 0.6);
+        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progressBar), "Processando em paralelo...");
+        atualizarUI();
+
+        // Executar curl
+        std::string comando = "curl -s -X POST http://servidor-mestre:8080/processar "
+                            "-H \"Content-Type: application/json\" "
+                            "-d @/tmp/request.json > /tmp/response.json 2>&1";
+        
+        system(comando.c_str());
+
+        // Fase 4: Finalização
+        atualizarStatus("📊", "Consolidando resultados...");
+        gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progressBar), 0.9);
+        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progressBar), "Finalizando...");
+        atualizarUI();
+        g_usleep(200000); // 200ms
+
+        // Ler resposta
+        std::ifstream resposta("/tmp/response.json");
+        std::string jsonResposta((std::istreambuf_iterator<char>(resposta)),
+                                std::istreambuf_iterator<char>());
+        resposta.close();
+
+        // Concluir
+        gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progressBar), 1.0);
+        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progressBar), "✅ Concluído!");
+        atualizarStatus("✅", "Processamento concluído!");
+
+        mostrarResultados(jsonResposta, nomeArquivo);
+        
+        gtk_widget_set_sensitive(btnProcessar, TRUE);
+        g_timeout_add(2500, esconderProgressBar, progressBar);
+    }
+
+    void atualizarUI() {
+        while (gtk_events_pending()) {
+            gtk_main_iteration();
+        }
+    }
+
+    static gboolean esconderProgressBar(gpointer data) {
+        GtkWidget *progressBar = static_cast<GtkWidget*>(data);
+        gtk_widget_set_visible(progressBar, FALSE);
+        return FALSE;
+    }
 };

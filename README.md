@@ -1,4 +1,4 @@
-# 🚀 Sistema Distribuído Master-Slave com C++
+# 🚀 Sistema Distribuído Master-Slave Contador de Caracteres com C++
 
 Sistema distribuído acadêmico implementando arquitetura **master-slave** com processamento paralelo, comunicação HTTP/REST e interface gráfica GTK moderna.
 
@@ -24,7 +24,7 @@ O sistema recebe um arquivo de texto e **distribui automaticamente** o processam
 ## 📁 Estrutura Detalhada do Projeto
 
 ```
-SD_04/
+CHARACTER-COUNTER/
 ├── 🖥️ servidor-mestre/          # COORDENADOR PRINCIPAL
 │   ├── main.cpp                 # • Recebe requisições HTTP
 │   ├── CMakeLists.txt          # • Distribui tarefas para escravos
@@ -111,12 +111,7 @@ docker-compose down
 ## 🏗️ Arquitetura Técnica Detalhada
 
 ### 🌐 Diagrama de Comunicação
-```
-[Cliente GTK] ──HTTP──► [Servidor Mestre:8080]
-                              │
-                              ├──HTTP──► [Escravo Letras:8081]
-                              │
-                              └──HTTP──► [Escravo Números:8082]
+![Diagrama de Comunicação](telas/diagrama.jpg)
 ```
 
 ### ⚙️ Fluxo de Processamento

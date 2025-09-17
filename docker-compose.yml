@@ -1,0 +1,79 @@
+# Docker Compose para Sistema Distribuído
+# Configuração para executar mestre + 2 escravos em uma máquina
+
+services:
+  # Servidor Mestre - Coordenador
+  servidor-mestre:
+    build: 
+      context: ./servidor-mestre
+      dockerfile: Dockerfile
+    container_name: sd04_mestre
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVIDOR_LETRAS=http://servidor-letras:8081
+      - SERVIDOR_NUMEROS=http://servidor-numeros:8082
+    depends_on:
+      - servidor-letras
+      - servidor-numeros
+    networks:
+      - sd04_network
+    restart: unless-stopped
+
+  # Escravo: Contador de Letras
+  servidor-letras:
+    build:
+      context: ./servidor-letras
+      dockerfile: Dockerfile
+    container_name: sd04_letras
+    ports:
+      - "8081:8081"
+    networks:
+      - sd04_network
+    restart: unless-stopped
+
+  # Escravo: Contador de Números  
+  servidor-numeros:
+    build:
+      context: ./servidor-numeros
+      dockerfile: Dockerfile
+    container_name: sd04_numeros
+    ports:
+      - "8082:8082"
+    networks:
+      - sd04_network
+    restart: unless-stopped
+
+  # Cliente GTK - Interface gráfica (opcional)
+  cliente-gtk:
+    build:
+      context: ./cliente-gtk
+      dockerfile: Dockerfile
+    container_name: sd04_cliente_gtk
+    depends_on:
+      - servidor-mestre
+    networks:
+      - sd04_network
+    environment:
+      - DISPLAY=host.docker.internal:0.0
+    volumes:
+      - .:/app/arquivos:ro
+    profiles:
+      - gtk
+    stdin_open: true
+    tty: true
+
+networks:
+  sd04_network:
+    driver: bridge
+    name: sd04_distributed_system
+
+# Para usar:
+# 1. Construir e iniciar serviços: docker-compose up --build -d
+# 2. Ver logs: docker-compose logs -f
+# 3. Executar cliente GTK: docker-compose --profile gtk up cliente-gtk
+# 4. Parar: docker-compose down
+# 5. Status: docker-compose ps
+volumes:
+  logs:
+    driver: local

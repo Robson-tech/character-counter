@@ -175,4 +175,71 @@ public:
         g_signal_connect(comboArquivos, "changed", G_CALLBACK(onArquivoSelecionado), this);
         g_signal_connect(btnProcessar, "clicked", G_CALLBACK(onProcessarArquivo), this);
     }
+
+    void carregarArquivos() {
+        arquivosDisponiveis.clear();
+        
+        // Placeholder inicial
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboArquivos), "📋 Selecione um arquivo...");
+        
+        // Procurar arquivos
+        const char* pasta = "/home/arquivos";
+        DIR* dir = opendir(pasta);
+        if (dir) {
+            struct dirent* entrada;
+            while ((entrada = readdir(dir)) != nullptr) {
+                std::string nome = entrada->d_name;
+                if (nome != "." && nome != ".." && 
+                    (nome.find(".txt") != std::string::npos ||
+                     nome.find(".cpp") != std::string::npos ||
+                     nome.find(".log") != std::string::npos ||
+                     nome.find(".md") != std::string::npos)) {
+                    
+                    arquivosDisponiveis.push_back(nome);
+                    
+                    // Ícone por extensão
+                    std::string icone = "📄";
+                    if (nome.find(".txt") != std::string::npos) icone = "📝";
+                    else if (nome.find(".cpp") != std::string::npos) icone = "💻";
+                    else if (nome.find(".log") != std::string::npos) icone = "📋";
+                    else if (nome.find(".md") != std::string::npos) icone = "📖";
+                    
+                    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboArquivos), 
+                                                  (icone + " " + nome).c_str());
+                }
+            }
+            closedir(dir);
+        }
+        
+        if (arquivosDisponiveis.empty()) {
+            gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(comboArquivos), 
+                                          "❌ Nenhum arquivo na pasta");
+            atualizarStatus("❌", "Nenhum arquivo disponível");
+        } else {
+            atualizarStatus("📁", std::to_string(arquivosDisponiveis.size()) + " arquivo(s) encontrado(s)");
+        }
+        
+        gtk_combo_box_set_active(GTK_COMBO_BOX(comboArquivos), 0);
+    }
+
+    static void onArquivoSelecionado(GtkWidget *widget, gpointer data) {
+        ClienteGTKCompativel *cliente = static_cast<ClienteGTKCompativel*>(data);
+        
+        gint indice = gtk_combo_box_get_active(GTK_COMBO_BOX(cliente->comboArquivos));
+        if (indice > 0 && indice <= cliente->arquivosDisponiveis.size()) {
+            gtk_widget_set_sensitive(cliente->btnProcessar, TRUE);
+            std::string arquivo = cliente->arquivosDisponiveis[indice - 1];
+            cliente->atualizarStatus("✅", "Pronto para processar: " + arquivo);
+        } else {
+            gtk_widget_set_sensitive(cliente->btnProcessar, FALSE);
+            if (!cliente->arquivosDisponiveis.empty()) {
+                cliente->atualizarStatus("📁", std::to_string(cliente->arquivosDisponiveis.size()) + " arquivo(s) disponível(is)");
+            }
+        }
+    }
+
+    static void onProcessarArquivo(GtkWidget *widget, gpointer data) {
+        ClienteGTKCompativel *cliente = static_cast<ClienteGTKCompativel*>(data);
+        cliente->processarArquivoSelecionado();
+    }
 };

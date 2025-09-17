@@ -1,0 +1,32 @@
+# Docker Compose para PC2 - Apenas Servidores
+services:
+  servidor-mestre:
+    build: ./servidor-mestre
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVIDOR_LETRAS_URL=http://servidor-letras:8081
+      - SERVIDOR_NUMEROS_URL=http://servidor-numeros:8082
+    depends_on:
+      - servidor-letras
+      - servidor-numeros
+    networks:
+      - sistema-rede
+
+  servidor-letras:
+    build: ./servidor-letras
+    ports:
+      - "8081:8081"
+    networks:
+      - sistema-rede
+
+  servidor-numeros:
+    build: ./servidor-numeros
+    ports:
+      - "8082:8082"
+    networks:
+      - sistema-rede
+
+networks:
+  sistema-rede:
+    driver: bridge

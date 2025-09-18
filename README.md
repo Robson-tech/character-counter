@@ -46,7 +46,8 @@ CHARACTER-COUNTER/
 │                                # • Visualização de resultados
 │
 ├── ⚙️ docker-compose.yml        # ORQUESTRAÇÃO COMPLETA
-├── ▶️ executar-gtk-compativel.bat # SCRIPT DE EXECUÇÃO AUTOMÁTICA
+├── ▶️ executar-pc2-servidores.bat # SCRIPT DE EXECUÇÃO AUTOMÁTICA SERVIDOR
+├── ▶️ executar-pc1-cliente.bat  # SCRIPT DE EXECUÇÃO AUTOMÁTICA CLIENTE
 ├── 📄 exemplo.txt               # ARQUIVO DE TESTE INCLUÍDO
 └── 📖 README.md                 # ESTA DOCUMENTAÇÃO
 ```
@@ -64,9 +65,15 @@ CHARACTER-COUNTER/
 
 ### ⚡ Execução Automática (Recomendado)
 
+#### 🖥️ Em PC1 (Cliente GTK)
 ```cmd
-# Executar o script completo (faz tudo automaticamente)
-executar-gtk-compativel.bat
+# Executar cliente (interface gráfica)
+executar-pc1-cliente.bat
+```
+#### 🖥️ Em PC2 (Servidores)
+```cmd
+# Executar servidores (mestre, letras e números)
+executar-pc2-servidores.bat
 ```
 
 ### 🔧 Execução Manual (Passo a Passo)
@@ -106,13 +113,10 @@ docker-compose down
 
 ---
 
----
-
 ## 🏗️ Arquitetura Técnica Detalhada
 
 ### 🌐 Diagrama de Comunicação
 ![Diagrama de Comunicação](telas/diagrama.jpg)
-```
 
 ### ⚙️ Fluxo de Processamento
 
